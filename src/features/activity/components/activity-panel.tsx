@@ -1,52 +1,102 @@
-import { RadioTower, ScrollText } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { Bot, RadioTower, ScrollText } from 'lucide-react'
 
 import { ScrollArea } from '#/components/ui/scroll-area'
 import { Separator } from '#/components/ui/separator'
+import { cn } from '#/lib/utils'
+import type {
+  TranscriptEntry,
+  AiResponseEntry,
+} from '#/features/workspace/components/workspace-shell'
 
 interface ActivityPanelProps {
   className?: string
+  transcripts: TranscriptEntry[]
+  aiResponses: AiResponseEntry[]
+  interimText: string
+  isRecording: boolean
 }
 
-export function ActivityPanel({ className }: ActivityPanelProps) {
+type TimelineItem =
+  | { kind: 'transcript'; entry: TranscriptEntry }
+  | { kind: 'ai'; entry: AiResponseEntry }
+
+export function ActivityPanel({
+  className,
+  transcripts,
+  aiResponses,
+  interimText,
+  isRecording,
+}: ActivityPanelProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Build merged timeline sorted by timestamp
+  const timeline: TimelineItem[] = [
+    ...transcripts.map((t) => ({ kind: 'transcript' as const, entry: t })),
+    ...aiResponses.map((a) => ({ kind: 'ai' as const, entry: a })),
+  ].sort((a, b) => a.entry.timestamp - b.entry.timestamp)
+
+  const hasContent = timeline.length > 0 || interimText
+
+  // Auto-scroll to bottom on new entries
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [timeline.length, interimText])
+
   return (
     <aside className={className} aria-labelledby="activity-panel-heading">
-      <div className="panel-surface flex h-full min-h-[18rem] flex-col rounded-[1.8rem]">
-        <div className="flex items-start justify-between gap-4 px-5 py-5">
-          <div>
-            <p className="eyebrow mb-2">Live transcript / activity</p>
-            <h2
-              id="activity-panel-heading"
-              className="display-title text-[1.55rem] text-[var(--ink)]"
-            >
-              Incoming voice context lands here.
-            </h2>
-          </div>
-          <span className="inline-flex size-11 items-center justify-center rounded-full border border-[var(--line)] bg-white/5 text-[var(--signal-strong)]">
-            <ScrollText />
-          </span>
-        </div>
-        <Separator />
-        <ScrollArea className="activity-scroll min-h-0 flex-1 px-5 py-5">
-          <div className="space-y-4">
-            <div className="rounded-[1.5rem] border border-dashed border-[var(--line-strong)] bg-white/4 p-5">
-              <div className="mb-3 inline-flex size-11 items-center justify-center rounded-full border border-[var(--line)] bg-white/5 text-[var(--accent)]">
-                <RadioTower />
-              </div>
-              <h3 className="text-base font-semibold text-[var(--ink)]">
-                No transcript frames yet
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                The UI is scaffolded for a live activity stream, but this panel
-                intentionally stays empty until a real transport adapter begins
-                publishing transcript and graph delta events.
-              </p>
-            </div>
-            <p className="font-mono text-xs leading-6 text-[var(--ink-dim)]">
-              Expected upstream responsibilities: speech-to-text, turn
-              segmentation, entity extraction, graph delta emission, and
-              connection orchestration.
+      <div className="panel-surface flex max-h-[28rem] min-h-[10rem] flex-col rounded-[1.4rem]">
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <ScrollText className="size-4 text-[var(--ink-dim)]" />
+            <p className="text-xs font-medium tracking-[0.08em] uppercase text-[var(--ink-dim)]">
+              live activity
             </p>
           </div>
+          {isRecording && (
+            <span className="flex items-center gap-1.5">
+              <span className="recording-dot size-2" />
+              <span className="text-[0.68rem] font-medium text-[var(--signal)]">
+                listening
+              </span>
+            </span>
+          )}
+        </div>
+        <Separator />
+        <ScrollArea className="activity-scroll min-h-0 flex-1 px-4 py-3" ref={scrollRef}>
+          {hasContent ? (
+            <div className="space-y-2.5">
+              {timeline.map((item) =>
+                item.kind === 'transcript' ? (
+                  <div key={`t-${item.entry.id}`} className="text-sm leading-6 text-[var(--ink)]">
+                    {item.entry.text}
+                  </div>
+                ) : (
+                  <div
+                    key={`a-${item.entry.id}`}
+                    className="flex gap-2 rounded-xl bg-[rgba(217,75,43,0.06)] px-3 py-2.5"
+                  >
+                    <Bot className="mt-0.5 size-4 shrink-0 text-[var(--signal)]" />
+                    <p className="text-sm leading-6 text-[var(--ink)]">{item.entry.text}</p>
+                  </div>
+                ),
+              )}
+              {interimText && (
+                <div className="text-sm leading-6 text-[var(--ink-dim)] italic">
+                  {interimText}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <RadioTower className="mb-2 size-5 text-[var(--ink-dim)]" />
+              <p className="text-sm text-[var(--ink-soft)]">
+                Start talking — your words will appear here.
+              </p>
+            </div>
+          )}
         </ScrollArea>
       </div>
     </aside>
