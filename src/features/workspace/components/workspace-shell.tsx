@@ -1,82 +1,104 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
+import { Mic } from 'lucide-react'
 
-import { ActivityPanel } from '#/features/activity/components/activity-panel'
+import { Button } from '#/components/ui/button'
+import { cn } from '#/lib/utils'
 import { GraphCanvas } from '#/features/graph/components/graph-canvas'
-import { useGraphStore } from '#/features/graph/store/graph-store'
-import { TopBar } from '#/features/workspace/components/top-bar'
 
 export function WorkspaceShell() {
-  const [activityPanelOpen, setActivityPanelOpen] = useState(true)
-  const nodeCount = useGraphStore((state) => state.nodes.length)
-  const edgeCount = useGraphStore((state) => state.edges.length)
-  const connectionStatus = useGraphStore((state) => state.connectionStatus)
-  const layoutDirection = useGraphStore((state) => state.layoutDirection)
-  const triggerLayout = useGraphStore((state) => state.triggerLayout)
+  const [isDocked, setIsDocked] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
 
   return (
-    <main
-      id="main-content"
-      className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 px-4 py-4 sm:px-5 sm:py-5 lg:px-6"
-    >
+    <main id="main-content" className="relative min-h-screen">
       <motion.div
-        initial={{ opacity: 0, y: 22 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.985 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.2, 1, 0.3, 1] }}
+        className="absolute inset-0"
       >
-        <TopBar
-          connectionStatus={connectionStatus}
-          layoutDirection={layoutDirection}
-          nodeCount={nodeCount}
-          edgeCount={edgeCount}
-          activityPanelOpen={activityPanelOpen}
-          onLayoutDirectionChange={(direction) => triggerLayout(direction)}
-          onRelayout={() => triggerLayout()}
-          onToggleActivityPanel={() =>
-            setActivityPanelOpen((current) => !current)
-          }
-        />
+        <GraphCanvas className="h-screen rounded-none" />
       </motion.div>
 
-      <div className="grid min-h-[calc(100vh-15rem)] gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <motion.section
-          initial={{ opacity: 0, y: 28 }}
+      <motion.div
+        layout
+        className={cn(
+          'pointer-events-none absolute inset-0 flex justify-center px-6 sm:px-8',
+          isDocked ? 'items-end pb-6 sm:pb-8' : 'items-center',
+        )}
+        transition={{
+          layout: {
+            duration: 0.72,
+            ease: [0.2, 1, 0.3, 1],
+          },
+        }}
+      >
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.08, ease: [0.2, 1, 0.3, 1] }}
-          className="panel-surface relative flex min-h-[32rem] flex-col overflow-hidden rounded-[2rem]"
-          aria-labelledby="graph-canvas-heading"
-        >
-          <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-5">
-            <div>
-              <p className="eyebrow mb-2">Realtime graph</p>
-              <h2
-                id="graph-canvas-heading"
-                className="display-title text-[1.65rem] text-[var(--ink)]"
-              >
-                Canvas for live ideation structure.
-              </h2>
-            </div>
-            <p className="max-w-xs text-right font-mono text-xs leading-5 text-[var(--ink-dim)]">
-              Node kinds: idea, category, insight. Layout engine: dagre.
-            </p>
-          </div>
-          <GraphCanvas className="flex-1" />
-        </motion.section>
-
-        {activityPanelOpen ? (
-          <motion.div
-            initial={{ opacity: 0, x: 18 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{
-              duration: 0.35,
-              delay: 0.12,
+          transition={{
+            duration: 0.4,
+            delay: 0.1,
+            ease: [0.2, 1, 0.3, 1],
+            layout: {
+              duration: 0.72,
               ease: [0.2, 1, 0.3, 1],
+            },
+          }}
+          className="pointer-events-auto"
+        >
+          <Button
+            size="lg"
+            onClick={() => {
+              if (!isDocked) {
+                setIsDocked(true)
+                setIsRecording(true)
+                return
+              }
+
+              setIsRecording((current) => !current)
             }}
+            aria-pressed={isRecording}
+            className={cn(
+              'h-10 rounded-full border-[rgba(162,78,43,0.24)] text-[0.82rem] font-medium tracking-[0.04em] shadow-[0_18px_34px_rgba(126,80,56,0.14)]',
+              isRecording ? 'relative min-w-[12.5rem] justify-center px-5' : 'px-4.5',
+            )}
           >
-            <ActivityPanel className="h-full" />
-          </motion.div>
-        ) : null}
-      </div>
+            {isRecording ? (
+              <>
+                <span aria-hidden="true" className="recording-leading recording-leading--absolute">
+                  <span className="recording-dot" />
+                </span>
+                <Waveform />
+                <span className="sr-only">listening</span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden="true" className="recording-leading">
+                  <Mic />
+                </span>
+                start yapping
+              </>
+            )}
+          </Button>
+        </motion.div>
+      </motion.div>
     </main>
+  )
+}
+
+function Waveform() {
+  return (
+    <span className="recording-wave" aria-hidden="true">
+      {Array.from({ length: 11 }).map((_, index) => (
+        <span
+          key={index}
+          className="recording-wave__bar"
+          style={{ animationDelay: `${index * 95}ms` }}
+        />
+      ))}
+    </span>
   )
 }

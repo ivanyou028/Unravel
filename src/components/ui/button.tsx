@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'border-transparent bg-[var(--signal)] text-[var(--canvas)] hover:bg-[var(--signal-strong)]',
+          'border-transparent bg-[var(--signal)] text-[var(--signal-ink)] hover:bg-[var(--signal-strong)]',
         outline:
-          'border-[var(--line)] bg-white/4 text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:bg-white/8 hover:text-[var(--ink)]',
+          'border-[var(--line)] bg-white/20 text-[var(--ink-soft)] hover:border-[var(--line-strong)] hover:bg-white/38 hover:text-[var(--ink)]',
         secondary:
-          'border-transparent bg-[rgba(201,240,122,0.14)] text-[var(--accent)] hover:bg-[rgba(201,240,122,0.2)]',
+          'border-transparent bg-[rgba(35,29,25,0.06)] text-[var(--ink)] hover:bg-[rgba(35,29,25,0.1)]',
         ghost:
-          'border-transparent bg-transparent text-[var(--ink-dim)] hover:bg-white/6 hover:text-[var(--ink)]',
+          'border-transparent bg-transparent text-[var(--ink-dim)] hover:bg-white/24 hover:text-[var(--ink)]',
         destructive:
-          'border-transparent bg-[rgba(255,128,117,0.14)] text-[var(--danger)] hover:bg-[rgba(255,128,117,0.22)]',
+          'border-transparent bg-[rgba(178,74,63,0.14)] text-[var(--danger)] hover:bg-[rgba(178,74,63,0.22)]',
         link: 'border-transparent px-0 text-[var(--signal-strong)] underline-offset-4 hover:underline',
       },
       size: {

@@ -69,7 +69,7 @@ const nodeAccentMap: Record<GraphNodeKind, string> = {
 
 const edgeAccentMap: Record<GraphEdgeKind, string> = {
   association: 'var(--edge)',
-  hierarchy: 'var(--category)',
+  hierarchy: 'var(--edge)',
   reference: 'var(--edge-strong)',
 }
 
@@ -111,8 +111,8 @@ export function createGraphEdge(record: GraphEdgeRecord): GraphEdge {
     animated: record.kind === 'reference',
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      width: 18,
-      height: 18,
+      width: 14,
+      height: 14,
       color: edgeAccentMap[record.kind],
     },
     style: {

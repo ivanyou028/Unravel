@@ -23,31 +23,31 @@ export function GraphNodeCard({
   return (
     <article
       className={cn(
-        'w-[min(300px,72vw)] rounded-[1.5rem] border border-white/6 bg-[rgba(17,14,15,0.92)] p-4 text-left shadow-[0_30px_90px_rgba(0,0,0,0.38)] transition-transform duration-300',
+        'w-[min(300px,72vw)] rounded-[1.2rem] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.46),transparent_20%),linear-gradient(180deg,var(--paper-strong),var(--paper))] p-4 text-left shadow-[0_18px_32px_rgba(73,61,52,0.08),0_2px_0_rgba(255,255,255,0.75)_inset,0_-1px_0_rgba(73,61,52,0.06)_inset] transition-transform duration-300',
         selected
-          ? 'scale-[1.01] border-[color:var(--node-accent)] shadow-[0_0_0_1px_var(--node-accent),0_32px_90px_rgba(0,0,0,0.42)]'
+          ? 'scale-[1.01] border-[color:var(--node-accent)] shadow-[0_0_0_1px_var(--node-accent),0_22px_44px_rgba(73,61,52,0.1),0_2px_0_rgba(255,255,255,0.82)_inset]'
           : 'hover:-translate-y-0.5',
       )}
     >
       <Handle
         type="target"
         position={targetPosition ?? Position.Top}
-        className="!bg-[var(--node-accent)]"
+        className="!border-[var(--line-strong)] !bg-[var(--paper-strong)]"
       />
       <Handle
         type="source"
         position={sourcePosition ?? Position.Bottom}
-        className="!bg-[var(--node-accent)]"
+        className="!border-[var(--line-strong)] !bg-[var(--paper-strong)]"
       />
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="eyebrow mb-2">{label}</p>
-          <h3 className="display-title text-[1.28rem] leading-tight text-[var(--ink)]">
+          <h3 className="display-title text-[1.3rem] leading-tight font-semibold text-[var(--ink)]">
             {data.label}
           </h3>
         </div>
         <span
-          className="inline-flex size-10 items-center justify-center rounded-full border border-white/8 bg-white/5"
+          className="inline-flex size-10 items-center justify-center rounded-full border border-[var(--line)] bg-white/35"
           style={{ color: tone }}
         >
           <Icon />
@@ -59,10 +59,10 @@ export function GraphNodeCard({
       </p>
       <div className="mt-4 flex items-center justify-between gap-3">
         <span
-          className="rounded-full px-3 py-1 font-mono text-[0.72rem] tracking-[0.22em] uppercase"
+          className="rounded-full border border-[var(--line)] px-3 py-1 font-mono text-[0.66rem] tracking-[0.16em] uppercase"
           style={{
             backgroundColor:
-              'color-mix(in oklab, var(--node-accent) 18%, transparent)',
+              'color-mix(in oklab, var(--node-accent) 10%, white 90%)',
             color: tone,
           }}
         >
