@@ -33,6 +33,11 @@ export interface GraphStoreState {
 
 export interface GraphStoreActions {
   setConnectionStatus: (status: GraphConnectionStatus) => void
+  replaceGraph: (
+    nodes: GraphNodeRecord[],
+    edges: GraphEdgeRecord[],
+    options?: { direction?: GraphLayoutDirection; relayout?: boolean },
+  ) => void
   upsertNode: (
     node: GraphNodeRecord,
     options?: { positionHint?: XYPosition; relayout?: boolean },
@@ -96,6 +101,21 @@ export const useGraphStore = create<GraphStore>((set) => ({
   ...initialState,
   setConnectionStatus: (status) => {
     set({ connectionStatus: status })
+  },
+  replaceGraph: (nodeRecords, edgeRecords, options) => {
+    set((state) => {
+      const nextNodes = nodeRecords.map((record) => createGraphNode(record))
+      const nextEdges = edgeRecords.map((record) => createGraphEdge(record))
+      const direction = options?.direction ?? state.layoutDirection
+
+      return maybeLayout(
+        state,
+        nextNodes,
+        nextEdges,
+        direction,
+        options?.relayout ?? true,
+      )
+    })
   },
   upsertNode: (node, options) => {
     set((state) => {

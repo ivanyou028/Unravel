@@ -4,11 +4,18 @@ import { Mic } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { cn } from '#/lib/utils'
+import { DevPanel } from '#/features/dev/components/dev-panel'
 import { GraphCanvas } from '#/features/graph/components/graph-canvas'
 
+export type CtaPreviewState =
+  | 'centered-idle'
+  | 'docked-idle'
+  | 'docked-recording'
+
 export function WorkspaceShell() {
-  const [isDocked, setIsDocked] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
+  const [ctaState, setCtaState] = useState<CtaPreviewState>('centered-idle')
+  const isDocked = ctaState !== 'centered-idle'
+  const isRecording = ctaState === 'docked-recording'
 
   return (
     <main id="main-content" className="relative min-h-screen">
@@ -20,6 +27,7 @@ export function WorkspaceShell() {
       >
         <GraphCanvas className="h-screen rounded-none" />
       </motion.div>
+      <DevPanel ctaState={ctaState} onCtaStateChange={setCtaState} />
 
       <motion.div
         layout
@@ -52,13 +60,16 @@ export function WorkspaceShell() {
           <Button
             size="lg"
             onClick={() => {
-              if (!isDocked) {
-                setIsDocked(true)
-                setIsRecording(true)
+              if (ctaState === 'centered-idle') {
+                setCtaState('docked-recording')
                 return
               }
 
-              setIsRecording((current) => !current)
+              setCtaState((current) =>
+                current === 'docked-recording'
+                  ? 'docked-idle'
+                  : 'docked-recording',
+              )
             }}
             aria-pressed={isRecording}
             className={cn(
