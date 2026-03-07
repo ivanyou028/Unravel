@@ -57,6 +57,8 @@ function GraphCanvasInner() {
       return
     }
 
+    console.log('[graph] Nodes after layout:', nodes.map(n => ({ id: n.id, pos: n.position })))
+
     void reactFlow.fitView({
       duration: 450,
       padding: 0.18,
