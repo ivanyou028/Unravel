@@ -4,8 +4,13 @@ import type {
   ConversationMessage,
   GraphNodeRecord,
   GraphEdgeRecord,
+  GraphNodeKind,
+  GraphEdgeKind,
   InboundGraphEvent,
 } from './shared-types.js'
+
+const NODE_KINDS = new Set<string>(['idea', 'category', 'insight'])
+const EDGE_KINDS = new Set<string>(['association', 'hierarchy', 'reference'])
 
 export interface AiProcessingInput {
   transcript: string
@@ -131,14 +136,45 @@ The "graphEvents" array may be empty [] if no graph changes are warranted.`
   }
 
   private buildMessages(input: AiProcessingInput): Anthropic.MessageParam[] {
-    const messages: Anthropic.MessageParam[] = input.conversationHistory.map(
-      (msg) => ({ role: msg.role, content: msg.content }),
-    )
-    messages.push({
-      role: 'user',
-      content: input.transcript,
-    })
-    return messages
+    return input.conversationHistory.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }))
+  }
+
+  private sanitizeNode(raw: Record<string, unknown>): GraphNodeRecord | null {
+    const { id, kind, label, summary, emphasis } = raw
+    if (typeof id !== 'string' || !id) return null
+    if (typeof label !== 'string' || !label) return null
+    if (!NODE_KINDS.has(kind as string)) return null
+
+    const node: GraphNodeRecord = {
+      id,
+      kind: kind as GraphNodeKind,
+      label: label.slice(0, 140),
+    }
+    if (typeof summary === 'string' && summary) node.summary = summary.slice(0, 280)
+    if (typeof emphasis === 'number' && emphasis >= 1 && emphasis <= 5) {
+      node.emphasis = Math.round(emphasis) as 1 | 2 | 3 | 4 | 5
+    }
+    return node
+  }
+
+  private sanitizeEdge(raw: Record<string, unknown>): GraphEdgeRecord | null {
+    const { id, source, target, kind, label } = raw
+    if (typeof id !== 'string' || !id) return null
+    if (typeof source !== 'string' || !source) return null
+    if (typeof target !== 'string' || !target) return null
+    if (!EDGE_KINDS.has(kind as string)) return null
+
+    const edge: GraphEdgeRecord = {
+      id,
+      source,
+      target,
+      kind: kind as GraphEdgeKind,
+    }
+    if (typeof label === 'string' && label) edge.label = label.slice(0, 120)
+    return edge
   }
 
   private parseResponse(text: string): AiProcessingResult {
@@ -156,18 +192,54 @@ The "graphEvents" array may be empty [] if no graph changes are warranted.`
       return { graphEvents: [], response: cleaned }
     }
 
-    // Stamp each graph event with envelope fields
+    // Sanitize and stamp each graph event with envelope fields
     const graphEvents: InboundGraphEvent[] = []
     if (Array.isArray(parsed.graphEvents)) {
       for (const raw of parsed.graphEvents) {
-        if (raw && typeof raw === 'object' && 'type' in raw) {
+        if (!raw || typeof raw !== 'object' || !('type' in raw)) continue
+        const event = raw as Record<string, unknown>
+        const type = event.type as string
+
+        if (type === 'graph.node.upsert') {
+          const node = this.sanitizeNode((event.node ?? {}) as Record<string, unknown>)
+          if (!node) continue
           graphEvents.push({
-            ...raw,
+            type,
+            node,
+            relayout: true,
             version: 1,
             eventId: randomUUID(),
             occurredAt: new Date().toISOString(),
+          })
+        } else if (type === 'graph.edge.upsert') {
+          const edge = this.sanitizeEdge((event.edge ?? {}) as Record<string, unknown>)
+          if (!edge) continue
+          graphEvents.push({
+            type,
+            edge,
             relayout: true,
-          } as InboundGraphEvent)
+            version: 1,
+            eventId: randomUUID(),
+            occurredAt: new Date().toISOString(),
+          })
+        } else if (type === 'graph.node.remove' && typeof event.nodeId === 'string') {
+          graphEvents.push({
+            type,
+            nodeId: event.nodeId,
+            relayout: true,
+            version: 1,
+            eventId: randomUUID(),
+            occurredAt: new Date().toISOString(),
+          })
+        } else if (type === 'graph.edge.remove' && typeof event.edgeId === 'string') {
+          graphEvents.push({
+            type,
+            edgeId: event.edgeId,
+            relayout: true,
+            version: 1,
+            eventId: randomUUID(),
+            occurredAt: new Date().toISOString(),
+          })
         }
       }
     }

@@ -1,4 +1,5 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
+dotenv.config({ override: true })
 import express from 'express'
 import cors from 'cors'
 import http from 'http'
@@ -30,6 +31,17 @@ app.delete('/api/session/:id', (req, res) => {
   } catch {
     res.status(404).json({ error: 'Session not found' })
   }
+})
+
+app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    env: {
+      deepgram: !!process.env.DEEPGRAM_API_KEY,
+      anthropic: !!process.env.ANTHROPIC_API_KEY,
+    },
+  })
 })
 
 // --- WebSocket ---

@@ -14,13 +14,15 @@ export function handleSessionSocket(
   const session = sessionManager.get(sessionId)
   console.log(`[ws] Client connected to session ${sessionId}`)
 
+  let destroyed = false
+
   // --- Utterance accumulation buffer ---
   let pendingTranscripts: string[] = []
   let isProcessing = false
 
   // --- Send JSON message to client ---
   function sendToClient(message: ServerToClientMessage): void {
-    if (ws.readyState === ws.OPEN) {
+    if (!destroyed && ws.readyState === ws.OPEN) {
       ws.send(JSON.stringify(message))
     }
   }
@@ -29,6 +31,8 @@ export function handleSessionSocket(
   const deepgram = new DeepgramService({
     apiKey: process.env.DEEPGRAM_API_KEY!,
     onEvent: (event) => {
+      if (destroyed) return
+
       if (event.type === 'transcript') {
         // Forward to client for live display
         sendToClient(event)
@@ -46,7 +50,12 @@ export function handleSessionSocket(
       sendToClient({ type: 'error', message: error.message })
     },
     onClose: () => {
-      // Deepgram disconnected — could reconnect here if needed
+      if (!destroyed) {
+        console.warn('[deepgram] Disconnected unexpectedly, reconnecting...')
+        setTimeout(() => {
+          if (!destroyed) deepgram.connect()
+        }, 1000)
+      }
     },
   })
 
@@ -54,7 +63,7 @@ export function handleSessionSocket(
 
   // --- AI processing pipeline ---
   async function processAccumulatedTranscripts(): Promise<void> {
-    if (pendingTranscripts.length === 0 || isProcessing) return
+    if (destroyed || pendingTranscripts.length === 0 || isProcessing) return
     isProcessing = true
 
     const transcript = pendingTranscripts.join(' ')
@@ -73,6 +82,8 @@ export function handleSessionSocket(
         currentGraph: graphSnapshot,
         topic: session.topic,
       })
+
+      if (destroyed) return
 
       // Stream graph events to client
       for (const event of result.graphEvents) {
@@ -100,7 +111,7 @@ export function handleSessionSocket(
     } finally {
       isProcessing = false
       // Process any transcripts that arrived during AI call
-      if (pendingTranscripts.length > 0) {
+      if (!destroyed && pendingTranscripts.length > 0) {
         await processAccumulatedTranscripts()
       }
     }
@@ -108,15 +119,21 @@ export function handleSessionSocket(
 
   // --- Handle incoming messages from client ---
   ws.on('message', (data, isBinary) => {
-    if (isBinary) {
+    if (isBinary && !destroyed) {
       deepgram.sendAudio(data as Buffer)
     }
-    // Future: handle JSON control messages from client
   })
 
   // --- Cleanup ---
   ws.on('close', () => {
     console.log(`[ws] Client disconnected from session ${sessionId}`)
+    destroyed = true
+    deepgram.disconnect()
+  })
+
+  ws.on('error', (err) => {
+    console.error(`[ws] Error on session ${sessionId}:`, err.message)
+    destroyed = true
     deepgram.disconnect()
   })
 }
