@@ -1,16 +1,8 @@
 import type { NodeProps } from '@xyflow/react'
-import { Sparkles } from 'lucide-react'
 
 import { GraphNodeCard } from '#/features/graph/components/graph-node-card'
 import type { GraphNode } from '#/features/graph/types/graph'
 
 export function InsightNode(props: NodeProps<GraphNode>) {
-  return (
-    <GraphNodeCard
-      {...props}
-      icon={Sparkles}
-      label="Surfaced insight"
-      tone="var(--insight)"
-    />
-  )
+  return <GraphNodeCard {...props} />
 }

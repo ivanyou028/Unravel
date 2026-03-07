@@ -77,9 +77,9 @@ export const graphNodeDimensions: Record<
   GraphNodeKind,
   { width: number; height: number }
 > = {
-  idea: { width: 280, height: 164 },
-  category: { width: 260, height: 152 },
-  insight: { width: 300, height: 176 },
+  idea: { width: 280, height: 100 },
+  category: { width: 280, height: 100 },
+  insight: { width: 280, height: 100 },
 }
 
 export function createGraphNode(
