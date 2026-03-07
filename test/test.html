@@ -34,7 +34,7 @@
     .status.connecting { background: #2e2a1a; color: #f0c040; }
     .status.connected { background: #1a2e1a; color: #4caf50; }
     .status.error { background: #2e1a1a; color: #f44336; }
-    .buttons { display: flex; gap: 12px; justify-content: center; margin-bottom: 32px; }
+    .buttons { display: flex; justify-content: center; gap: 12px; margin-bottom: 32px; }
     button {
       padding: 12px 28px;
       border: none;
@@ -45,7 +45,7 @@
       transition: opacity 0.2s;
     }
     button:hover { opacity: 0.85; }
-    button:disabled { opacity: 0.3; cursor: not-allowed; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
     #startBtn { background: #4caf50; color: #fff; }
     #stopBtn { background: #f44336; color: #fff; }
     .transcript-box {
@@ -87,8 +87,8 @@
     <div id="status" class="status idle">idle</div>
     <br><br>
     <div class="buttons">
-      <button id="startBtn" onclick="start()">Start Listening</button>
-      <button id="stopBtn" onclick="stop()" disabled>Stop</button>
+      <button id="startBtn" onclick="start()">Start Session</button>
+      <button id="stopBtn" onclick="stop()" disabled>Stop Session</button>
     </div>
     <div id="transcript" class="transcript-box">
       <span class="interim">Your speech will appear here...</span>
@@ -100,6 +100,16 @@
     let ws = null;
     let mediaRecorder = null;
     let stream = null;
+    let isSessionActive = false;
+
+    // Track finalized transcript segments
+    let finalSegments = [];
+    let currentInterim = '';
+
+    // 2s Claude decision loop state
+    let decisionIntervalId = null;
+    let lastProcessedIndex = 0;
+    let decisionInFlight = false;
 
     function log(msg) {
       const el = document.getElementById('log');
@@ -113,9 +123,13 @@
       el.className = `status ${cls}`;
     }
 
-    // Track finalized transcript segments
-    let finalSegments = [];
-    let currentInterim = '';
+    function setSessionButtons(isActive) {
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      startBtn.disabled = isActive;
+      stopBtn.disabled = !isActive;
+      startBtn.textContent = isActive ? 'Session Live' : 'Start Session';
+    }
 
     function renderTranscript() {
       const el = document.getElementById('transcript');
@@ -133,11 +147,135 @@
       el.scrollTop = el.scrollHeight;
     }
 
+    async function requestNodeDecision(newText, fullTranscript) {
+      const response = await fetch('/api/claude/decide', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ newText, fullTranscript }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to get node decision');
+      }
+      return payload;
+    }
+
+    async function dispatchGraphEvent(node) {
+      const event = {
+        type: 'UPSERT_NODE',
+        node: {
+          id: `node-${Date.now()}`,
+          title: node.title,
+          summary: node.summary,
+          source: node.source || 'claude',
+        },
+      };
+
+      const response = await fetch('/api/graph/event', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to dispatch graph event');
+      }
+
+      log(`[node] ${event.node.title}`);
+    }
+
+    function stopDecisionLoop() {
+      if (decisionIntervalId) {
+        clearInterval(decisionIntervalId);
+        decisionIntervalId = null;
+        log('Claude decision loop stopped');
+      }
+      decisionInFlight = false;
+    }
+
+    function startDecisionLoop() {
+      stopDecisionLoop();
+
+      decisionIntervalId = setInterval(async () => {
+        if (decisionInFlight) {
+          return;
+        }
+
+        const newSegments = finalSegments.slice(lastProcessedIndex);
+        const newText = newSegments.join(' ').trim();
+
+        if (!newText) {
+          return;
+        }
+
+        decisionInFlight = true;
+        try {
+          const fullTranscript = finalSegments.join(' ').trim();
+          const decision = await requestNodeDecision(newText, fullTranscript);
+
+          if (decision?.shouldAddNode && decision?.node) {
+            await dispatchGraphEvent(decision.node);
+          }
+
+          lastProcessedIndex = finalSegments.length;
+        } catch (err) {
+          log(`[claude-error] ${err.message}`);
+        } finally {
+          decisionInFlight = false;
+        }
+      }, 2000);
+
+      log('Claude decision loop started (every 2s)');
+    }
+
+    function cleanupSession(options = {}) {
+      const { closeSocket = true } = options;
+      stopDecisionLoop();
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      mediaRecorder = null;
+
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+      stream = null;
+
+      if (closeSocket && ws) {
+        ws.close();
+      }
+      if (closeSocket) {
+        ws = null;
+      }
+    }
+
+    function stop() {
+      if (!isSessionActive) {
+        return;
+      }
+
+      log('Stopping session...');
+      cleanupSession();
+      isSessionActive = false;
+      setStatus('idle', 'idle');
+      setSessionButtons(false);
+    }
+
     async function start() {
-      document.getElementById('startBtn').disabled = true;
+      if (isSessionActive) {
+        return;
+      }
+
+      isSessionActive = true;
+      setSessionButtons(true);
       setStatus('connecting...', 'connecting');
       finalSegments = [];
       currentInterim = '';
+      lastProcessedIndex = 0;
+      decisionInFlight = false;
+      renderTranscript();
 
       try {
         // 1. Get mic access
@@ -152,7 +290,6 @@
         ws.onopen = () => {
           log('WebSocket connected to server');
           setStatus('connected — speak!', 'connected');
-          document.getElementById('stopBtn').disabled = false;
 
           // 3. Start MediaRecorder and stream audio chunks
           mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
@@ -163,7 +300,7 @@
           };
           mediaRecorder.start(100); // send chunks every 100ms
           log('Recording started — speak now');
-          renderTranscript();
+          startDecisionLoop();
         };
 
         ws.onmessage = (e) => {
@@ -183,45 +320,35 @@
             log(`[status] ${msg.message}`);
           } else if (msg.type === 'error') {
             log(`[error] ${msg.message}`);
+            setStatus('deepgram error', 'error');
           }
         };
 
         ws.onclose = () => {
           log('WebSocket closed');
+          cleanupSession({ closeSocket: false });
+          ws = null;
+          isSessionActive = false;
           setStatus('disconnected', 'idle');
+          setSessionButtons(false);
         };
 
-        ws.onerror = (err) => {
-          log(`WebSocket error`);
+        ws.onerror = () => {
+          log('WebSocket error');
           setStatus('error', 'error');
         };
       } catch (err) {
         log(`Error: ${err.message}`);
+        cleanupSession();
+        isSessionActive = false;
         setStatus('error', 'error');
-        document.getElementById('startBtn').disabled = false;
+        setSessionButtons(false);
       }
     }
 
-    function stop() {
-      document.getElementById('stopBtn').disabled = true;
-
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        mediaRecorder = null;
-      }
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-        stream = null;
-      }
-      if (ws) {
-        ws.close();
-        ws = null;
-      }
-
-      setStatus('idle', 'idle');
-      document.getElementById('startBtn').disabled = false;
-      log('Stopped');
-    }
+    window.addEventListener('beforeunload', () => {
+      cleanupSession();
+    });
   </script>
 </body>
 </html>
