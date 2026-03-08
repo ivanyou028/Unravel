@@ -75,7 +75,7 @@ async function callClaudeForNodeDecision(newText, fullTranscript) {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-latest',
+      model: 'claude-sonnet-4-6',
       max_tokens: 250,
       temperature: 0,
       system: systemPrompt,

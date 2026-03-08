@@ -7,6 +7,7 @@ export type VoiceEventType =
   | 'agent_left'
   | 'agent_state_change'
   | 'transcript'
+  | 'ai_debug'
   | 'error';
 
 export interface VoiceEvent {

@@ -87,6 +87,20 @@ export interface TranscriptMessage {
 export interface AiResponseMessage {
   type: 'ai.response'
   text: string
+  debug?: {
+    systemPrompt: string
+    messages: unknown[]
+    rawResponse: string
+  }
+}
+
+export interface AiDebugMessage {
+  type: 'ai.debug'
+  debug: {
+    systemPrompt: string
+    messages: unknown[]
+    rawResponse: string
+  }
 }
 
 export interface UtteranceEndMessage {
@@ -101,6 +115,7 @@ export interface ErrorMessage {
 export type ServerToClientMessage =
   | TranscriptMessage
   | AiResponseMessage
+  | AiDebugMessage
   | UtteranceEndMessage
   | InboundGraphEvent
   | ErrorMessage

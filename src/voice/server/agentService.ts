@@ -7,7 +7,7 @@ const AGORA_CUSTOMER_ID = process.env.AGORA_CUSTOMER_ID!;
 const AGORA_CUSTOMER_SECRET = process.env.AGORA_CUSTOMER_SECRET!;
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!;
-const LLM_MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-20250514';
+const LLM_MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-6';
 
 const TTS_VENDOR = process.env.TTS_VENDOR || 'microsoft';
 const MICROSOFT_TTS_KEY = process.env.MICROSOFT_TTS_KEY;

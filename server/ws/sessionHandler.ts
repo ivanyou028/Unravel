@@ -87,7 +87,7 @@ export function handleSessionSocket(
 
       // Stream graph events to client
       for (const event of result.graphEvents) {
-        console.log(`[ai] Sending event: ${event.type}`, 'node' in event ? (event as Record<string, unknown>).node : 'edge' in event ? (event as Record<string, unknown>).edge : '')
+        console.log(`[ai] Sending event: ${event.type}`, 'node' in event ? (event as any).node : 'edge' in event ? (event as any).edge : '')
         sendToClient(event)
       }
 
@@ -96,9 +96,12 @@ export function handleSessionSocket(
 
       // Send AI conversational response
       if (result.response) {
-        sendToClient({ type: 'ai.response', text: result.response })
+        sendToClient({ type: 'ai.response', text: result.response, debug: result.debug })
         sessionManager.addAssistantMessage(sessionId, result.response)
         console.log(`[ai] Response: "${result.response.slice(0, 120)}"`)
+      } else if (result.debug) {
+        // Send debug info even if there is no response
+        sendToClient({ type: 'ai.debug', debug: result.debug })
       }
 
       console.log(

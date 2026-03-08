@@ -18,12 +18,31 @@ export function WorkspaceShell() {
   const applyEvent = useGraphStore((state) => state.applyEvent)
   const setConnectionStatus = useGraphStore((state) => state.setConnectionStatus)
 
+  const [debugEvents, setDebugEvents] = useState<any[]>([])
+  const [showDebug, setShowDebug] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'd') {
+        setShowDebug((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Voice session hook
   const { status, connect, disconnect, getAdapter } = useVoiceSession({
     onStatusChange: (s) => {
       if (s === 'connected') setConnectionStatus('connected')
       else if (s === 'connecting') setConnectionStatus('connecting')
       else setConnectionStatus('unbound')
+    },
+    onEvent: (e) => {
+      if (e.type === 'transcript' || e.type === 'ai_debug' || e.type === 'agent_state_change') {
+        setDebugEvents((prev) => [...prev, e].slice(-50))
+      }
     },
   })
 
@@ -130,6 +149,32 @@ export function WorkspaceShell() {
           </Button>
         </motion.div>
       </motion.div>
+
+      {/* Debug Panel */}
+      {showDebug && (
+        <div className="absolute left-4 top-4 z-50 w-96 max-h-[80vh] overflow-y-auto rounded-lg bg-black/80 p-4 text-xs text-white shadow-xl backdrop-blur-sm pointer-events-auto">
+          <h3 className="mb-3 font-bold text-gray-300 border-b border-gray-700 pb-2">Debug Events</h3>
+          <div className="flex flex-col gap-2">
+            {debugEvents.map((ev, i) => (
+              <div key={i} className="rounded bg-black/50 p-2 border border-gray-800">
+                <div className="mb-1 text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
+                  {new Date(ev.timestamp).toLocaleTimeString()} - {ev.type}
+                </div>
+                <div className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed break-words overflow-hidden text-gray-300">
+                  {ev.type === 'transcript' ? (
+                    <span className={ev.data.is_final ? 'text-green-400' : 'text-yellow-400'}>
+                      "{ev.data.transcript}"
+                    </span>
+                  ) : (
+                    JSON.stringify(ev.data, null, 2)
+                  )}
+                </div>
+              </div>
+            ))}
+            {debugEvents.length === 0 && <div className="text-gray-500 italic">No events yet...</div>}
+          </div>
+        </div>
+      )}
     </main>
   )
 }

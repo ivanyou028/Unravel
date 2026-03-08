@@ -15,6 +15,7 @@ export interface TranscriptData {
 export interface WsSessionAdapterCallbacks {
   onTranscript?: (data: TranscriptData) => void
   onAiResponse?: (text: string) => void
+  onAiDebug?: (debug: any) => void
   onUtteranceEnd?: () => void
   onError?: (message: string) => void
   onStatusChange?: (status: GraphConnectionStatus) => void
@@ -129,6 +130,12 @@ export class WsSessionAdapter implements GraphEventAdapter {
         break
       case 'ai.response':
         this.callbacks.onAiResponse?.(msg.text as string)
+        if (msg.debug) {
+          this.callbacks.onAiDebug?.(msg.debug)
+        }
+        break
+      case 'ai.debug':
+        this.callbacks.onAiDebug?.(msg.debug)
         break
       case 'utterance_end':
         this.callbacks.onUtteranceEnd?.()

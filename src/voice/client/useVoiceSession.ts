@@ -69,7 +69,7 @@ export function useVoiceSession(callbacks?: VoiceSessionCallbacks) {
             callbacks?.onEvent?.({
               type: 'transcript',
               timestamp: Date.now(),
-              data,
+              data: data as unknown as Record<string, unknown>,
             })
           },
           onAiResponse: (text) => {
@@ -77,6 +77,13 @@ export function useVoiceSession(callbacks?: VoiceSessionCallbacks) {
               type: 'agent_state_change',
               timestamp: Date.now(),
               data: { response: text },
+            })
+          },
+          onAiDebug: (debug) => {
+            callbacks?.onEvent?.({
+              type: 'ai_debug',
+              timestamp: Date.now(),
+              data: { debug },
             })
           },
           onError: (message) => {

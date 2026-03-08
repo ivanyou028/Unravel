@@ -25,6 +25,11 @@ export interface AiProcessingInput {
 export interface AiProcessingResult {
   graphEvents: InboundGraphEvent[]
   response?: string
+  debug?: {
+    systemPrompt: string
+    messages: unknown[]
+    rawResponse: string
+  }
 }
 
 export class AiService {
@@ -53,7 +58,15 @@ export class AiService {
       .map((block) => block.text)
       .join('')
 
-    return this.parseResponse(text)
+    const parsed = this.parseResponse(text)
+
+    parsed.debug = {
+      systemPrompt,
+      messages,
+      rawResponse: text,
+    }
+
+    return parsed
   }
 
   private buildSystemPrompt(input: AiProcessingInput): string {
@@ -71,25 +84,9 @@ export class AiService {
         ? JSON.stringify(input.currentGraph.edges, null, 2)
         : '(none yet)'
 
-    return `You are an expert brainstorm collaborator on a live voice call. You help people think out loud and turn messy ideas into clarity, while simultaneously building a structured knowledge graph of their thinking.
+    return `You are a data extraction system. Your job is to listen to a raw, messy, stream-of-consciousness transcript from a user and extract key concepts to build a structured knowledge graph.
 
 ${topicLine}
-
-## Your Role
-- You are an ACTIVE thinking partner, not a passive note-taker
-- Listen carefully, then ask sharp clarifying questions
-- Identify patterns, tensions, and connections the user might miss
-- Challenge weak assumptions gently but directly
-- Suggest reframes and alternative angles
-- Synthesize themes as they emerge
-
-## Conversation Style
-- Keep responses SHORT — 1-3 sentences max. This is a fast-paced voice conversation.
-- Be direct and conversational. No bullet points, no numbered lists.
-- Use natural speech patterns. Be human.
-- When you notice a pattern, name it.
-- When ideas conflict, surface it.
-- Ask ONE question at a time.
 
 ## Current Graph State
 NODES:
@@ -112,10 +109,9 @@ Analyze the user's speech and produce graph mutations:
 - Labels: max 140 chars for nodes, max 120 chars for edges
 - Summaries: max 280 chars, optional, for nodes that need elaboration
 - Do NOT create duplicate nodes for ideas already on the graph — update them instead
-- It's OK to return zero graph events if the user is just chatting or asking a question
 
 ## Response Format
-Respond with ONLY a JSON object. No markdown, no code fences, no explanation outside the JSON.
+Respond with ONLY a JSON object. No markdown, no code fences, no explanation outside the JSON. Do NOT include a conversational response.
 
 {
   "graphEvents": [
@@ -127,22 +123,24 @@ Respond with ONLY a JSON object. No markdown, no code fences, no explanation out
       "type": "graph.edge.upsert",
       "edge": { "id": "e-def456", "source": "n-abc123", "target": "n-existing", "kind": "association", "label": "optional edge label" }
     }
-  ],
-  "response": "Your short conversational response here (1-3 sentences)"
+  ]
 }
 
 Event types you can use: graph.node.upsert, graph.node.remove, graph.edge.upsert, graph.edge.remove
 
 Do NOT include version, eventId, or occurredAt — the server adds those.
-The "response" field is your spoken reply to the user. Always include it.
 The "graphEvents" array may be empty [] if no graph changes are warranted.`
   }
 
   private buildMessages(input: AiProcessingInput): Anthropic.MessageParam[] {
-    return input.conversationHistory.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }))
+    // We pass the new transcript as the user message.
+    // If you want full history, you can access input.conversationHistory here too.
+    return [
+      {
+        role: 'user',
+        content: `Here is the latest stream of text from the user:\n\n"""\n${input.transcript}\n"""\n\nBased on this transcript, what nodes and edges should be populated?`,
+      },
+    ]
   }
 
   private sanitizeNode(raw: Record<string, unknown>): GraphNodeRecord | null {
