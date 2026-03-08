@@ -16,7 +16,9 @@ export function WorkspaceShell() {
   const isRecording = ctaState === 'docked-recording'
 
   const applyEvent = useGraphStore((state) => state.applyEvent)
-  const setConnectionStatus = useGraphStore((state) => state.setConnectionStatus)
+  const setConnectionStatus = useGraphStore(
+    (state) => state.setConnectionStatus,
+  )
 
   const [debugEvents, setDebugEvents] = useState<any[]>([])
   const [showDebug, setShowDebug] = useState(false)
@@ -52,7 +54,9 @@ export function WorkspaceShell() {
     if (!adapter || status !== 'connected') return
 
     const unsubGraph = adapter.subscribe(applyEvent)
-    return () => { unsubGraph() }
+    return () => {
+      unsubGraph()
+    }
   }, [status, getAdapter, applyEvent])
 
   const handleButtonClick = useCallback(async () => {
@@ -126,13 +130,18 @@ export function WorkspaceShell() {
             onClick={handleButtonClick}
             aria-pressed={isRecording}
             className={cn(
-              'h-10 rounded-full border-[rgba(162,78,43,0.24)] text-[0.82rem] font-medium tracking-[0.04em] shadow-[0_18px_34px_rgba(126,80,56,0.14)]',
-              isRecording ? 'relative min-w-[12.5rem] justify-center px-5' : 'px-4.5',
+              'h-10 rounded-full border-[rgba(124,100,212,0.28)] text-[0.82rem] font-medium tracking-[0.04em] shadow-[0_18px_34px_rgba(114,92,205,0.2)]',
+              isRecording
+                ? 'relative min-w-[12.5rem] justify-center px-5'
+                : 'px-4.5',
             )}
           >
             {isRecording ? (
               <>
-                <span aria-hidden="true" className="recording-leading recording-leading--absolute">
+                <span
+                  aria-hidden="true"
+                  className="recording-leading recording-leading--absolute"
+                >
                   <span className="recording-dot" />
                 </span>
                 <Waveform />

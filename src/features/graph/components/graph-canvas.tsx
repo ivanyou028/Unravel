@@ -29,7 +29,7 @@ export function GraphCanvas({ className }: GraphCanvasProps) {
   return (
     <div
       className={cn(
-        'relative h-full min-h-[24rem] overflow-hidden rounded-[1.8rem]',
+        'orb-glow-canvas relative isolate h-full min-h-[24rem] overflow-hidden',
         className,
       )}
     >
@@ -57,8 +57,6 @@ function GraphCanvasInner() {
       return
     }
 
-    console.log('[graph] Nodes after layout:', nodes.map(n => ({ id: n.id, pos: n.position })))
-
     void reactFlow.fitView({
       duration: 450,
       padding: 0.18,
@@ -67,6 +65,7 @@ function GraphCanvasInner() {
 
   return (
     <ReactFlow
+      className="orb-glow-flow"
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
@@ -81,7 +80,7 @@ function GraphCanvasInner() {
       nodesDraggable
       proOptions={{ hideAttribution: true }}
       defaultEdgeOptions={{
-        type: 'smoothstep',
+        type: 'default',
       }}
     />
   )

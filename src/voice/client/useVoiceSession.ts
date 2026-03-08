@@ -5,7 +5,7 @@ import {
 } from '#/features/realtime/ws-session-adapter'
 import type { VoiceSessionStatus, VoiceSessionCallbacks } from '../types'
 
-const API_BASE = import.meta.env.VITE_API_BASE || ''
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 const BUFFER_SIZE = 4096
 const TARGET_SAMPLE_RATE = 16000
 
@@ -59,7 +59,9 @@ export function useVoiceSession(callbacks?: VoiceSessionCallbacks) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ topic }),
         })
-        if (!res.ok) throw new Error('Failed to create session')
+        if (!res.ok) {
+          throw new Error(`Failed to create session (${res.status})`)
+        }
         const { sessionId } = await res.json()
         sessionIdRef.current = sessionId
 

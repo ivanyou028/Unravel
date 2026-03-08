@@ -41,12 +41,16 @@
   --panel-strong: rgba(248, 244, 238, 0.96);
   --line: rgba(61, 52, 46, 0.13);
   --line-strong: rgba(61, 52, 46, 0.24);
+  --node-paper: #eef1ff;
+  --node-paper-strong: #fafbff;
+  --node-line: rgba(118, 126, 182, 0.2);
+  --node-line-strong: rgba(118, 126, 182, 0.34);
   --ink: #231d19;
   --ink-soft: rgba(35, 29, 25, 0.78);
   --ink-dim: rgba(35, 29, 25, 0.5);
-  --signal: #d94b2b;
-  --signal-strong: #eb5b38;
-  --signal-ink: #fff9f4;
+  --signal: #8c76dd;
+  --signal-strong: #7a63d4;
+  --signal-ink: #f9f7ff;
   --accent: #d4cdc2;
   --secondary: rgba(35, 29, 25, 0.05);
   --muted: rgba(255, 255, 255, 0.35);
@@ -57,8 +61,7 @@
   --edge: rgba(57, 49, 44, 0.42);
   --edge-strong: rgba(57, 49, 44, 0.62);
   --shadow-panel:
-    0 24px 48px rgba(70, 56, 45, 0.08),
-    0 2px 0 rgba(255, 255, 255, 0.8) inset,
+    0 24px 48px rgba(70, 56, 45, 0.08), 0 2px 0 rgba(255, 255, 255, 0.8) inset,
     0 -1px 0 rgba(92, 79, 66, 0.06) inset;
 }
 
@@ -78,8 +81,16 @@ body {
   font-family: var(--font-sans);
   background-color: var(--canvas);
   background:
-    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.42), transparent 28%),
-    radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.2), transparent 18%),
+    radial-gradient(
+      circle at 18% 14%,
+      rgba(255, 255, 255, 0.42),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 82% 10%,
+      rgba(255, 255, 255, 0.2),
+      transparent 18%
+    ),
     linear-gradient(180deg, #dfd8ce 0%, #d8d1c6 100%);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -105,8 +116,18 @@ body::after {
   pointer-events: none;
   opacity: 0.35;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 16%, transparent 84%, rgba(89, 75, 63, 0.08) 100%),
-    radial-gradient(circle at center, transparent 58%, rgba(89, 75, 63, 0.06) 100%);
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.45),
+      transparent 16%,
+      transparent 84%,
+      rgba(89, 75, 63, 0.08) 100%
+    ),
+    radial-gradient(
+      circle at center,
+      transparent 58%,
+      rgba(89, 75, 63, 0.06) 100%
+    );
 }
 
 button,
@@ -211,6 +232,114 @@ pre code {
 
 .react-flow__edge-path {
   stroke-linecap: round;
+}
+
+.orb-glow-canvas {
+  background-color: #f4eff7;
+  background-image:
+    linear-gradient(
+      135deg,
+      rgb(141 114 210 / 0) 0%,
+      rgb(129 98 205 / 0.52) 30%,
+      rgb(146 101 214 / 0.7) 50%,
+      rgb(146 101 214 / 0) 80%
+    ),
+    radial-gradient(
+      2200px 1800px at 5% 5%,
+      rgb(251 249 252 / 1) 0%,
+      rgb(241 235 248 / 0.76) 30%,
+      rgb(244 239 247 / 0.24) 60%,
+      rgb(242 170 145 / 0) 90%
+    ),
+    radial-gradient(
+      1100px 900px at 90% 10%,
+      rgb(112 92 210 / 0.9) 0%,
+      rgb(134 105 222 / 0.56) 45%,
+      rgb(134 105 222 / 0) 85%
+    ),
+    radial-gradient(
+      900px 700px at 75% 50%,
+      rgb(125 102 201 / 0.6) 0%,
+      rgb(125 102 201 / 0.26) 50%,
+      rgb(125 102 201 / 0) 85%
+    ),
+    radial-gradient(
+      1400px 1100px at 100% 100%,
+      rgb(248 181 153 / 1) 0%,
+      rgb(242 170 145 / 0.82) 34%,
+      rgb(232 136 159 / 0.54) 62%,
+      rgb(232 136 159 / 0) 88%
+    ),
+    radial-gradient(
+      1400px 1000px at 0% 100%,
+      rgb(168 190 246 / 0.76) 0%,
+      rgb(168 190 246 / 0.44) 35%,
+      rgb(168 190 246 / 0) 70%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(221 246 255 / 0.52) 0%,
+      rgb(221 246 255 / 0) 15%
+    );
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.orb-glow-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      125deg,
+      rgb(134 106 214 / 0) 0%,
+      rgb(134 106 214 / 0.32) 22%,
+      rgb(176 108 210 / 0.36) 38%,
+      rgb(208 97 179 / 0.24) 52%,
+      rgb(242 170 145 / 0.18) 64%,
+      rgb(242 170 145 / 0) 76%
+    ),
+    radial-gradient(
+      1200px 900px at 40% 40%,
+      rgb(244 239 247 / 0.52) 0%,
+      rgb(244 239 247 / 0) 60%
+    );
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(1.14) contrast(1.02);
+  opacity: 0.94;
+}
+
+.orb-glow-canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 95% at 50% 45%,
+      rgb(0 0 0 / 0) 60%,
+      rgb(0 0 0 / 0.12) 100%
+    ),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+  background-size:
+    cover,
+    150px 150px;
+  mix-blend-mode: soft-light;
+  opacity: 0.75;
+}
+
+.orb-glow-flow {
+  --xy-node-border-default: transparent;
+  --xy-node-background-color-default: transparent;
+  --xy-edge-stroke-default: var(--edge);
+  --xy-edge-stroke-selected: var(--edge-strong);
+  --xy-connectionline-stroke-default: var(--edge-strong);
+  --xy-edge-stroke-width-default: 1.2;
+  --xy-attribution-background-color-default: transparent;
+  background: transparent;
 }
 
 .recording-leading {

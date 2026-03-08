@@ -1,11 +1,5 @@
 import type { CSSProperties } from 'react'
-import {
-  MarkerType,
-  Position,
-  type Edge,
-  type Node,
-  type XYPosition,
-} from '@xyflow/react'
+import { Position, type Edge, type Node, type XYPosition } from '@xyflow/react'
 
 export const graphNodeKinds = ['idea', 'category', 'insight'] as const
 export type GraphNodeKind = (typeof graphNodeKinds)[number]
@@ -59,7 +53,7 @@ export interface GraphEdgeRecord {
 export type GraphEdgeData = Omit<GraphEdgeRecord, 'id' | 'source' | 'target'>
 
 export type GraphNode = Node<GraphNodeData, GraphNodeKind>
-export type GraphEdge = Edge<GraphEdgeData, 'smoothstep'>
+export type GraphEdge = Edge<GraphEdgeData, 'default'>
 
 const nodeAccentMap: Record<GraphNodeKind, string> = {
   idea: 'var(--idea)',
@@ -105,16 +99,10 @@ export function createGraphNode(
 export function createGraphEdge(record: GraphEdgeRecord): GraphEdge {
   return {
     id: record.id,
-    type: 'smoothstep',
+    type: 'default',
     source: record.source,
     target: record.target,
     animated: record.kind === 'reference',
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      width: 14,
-      height: 14,
-      color: edgeAccentMap[record.kind],
-    },
     style: {
       stroke: edgeAccentMap[record.kind],
       strokeWidth: record.kind === 'hierarchy' ? 1.7 : 1.4,
