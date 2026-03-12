@@ -4,15 +4,11 @@ import { useEffect, useState } from 'react'
 import { ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react'
 
 import { cn } from '#/lib/utils'
-import { CategoryNode } from '#/features/graph/components/category-node'
-import { IdeaNode } from '#/features/graph/components/idea-node'
-import { InsightNode } from '#/features/graph/components/insight-node'
+import { GraphNodeCard } from '#/features/graph/components/graph-node-card'
 import { useGraphStore } from '#/features/graph/store/graph-store'
 
 const nodeTypes = {
-  idea: IdeaNode,
-  category: CategoryNode,
-  insight: InsightNode,
+  default: GraphNodeCard,
 }
 
 interface GraphCanvasProps {

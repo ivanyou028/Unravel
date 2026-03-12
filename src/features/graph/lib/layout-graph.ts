@@ -2,11 +2,11 @@ import dagre from '@dagrejs/dagre'
 import { Position } from '@xyflow/react'
 
 import {
-  graphNodeDimensions,
+  GRAPH_NODE_HEIGHT,
+  GRAPH_NODE_WIDTH,
   type GraphEdge,
   type GraphLayoutDirection,
   type GraphNode,
-  type GraphNodeKind,
 } from '#/features/graph/types/graph'
 
 export interface GraphLayoutOptions {
@@ -15,8 +15,6 @@ export interface GraphLayoutOptions {
   rankSeparation?: number
 }
 
-const NODE_W = 280
-const NODE_H = 120
 const GAP_X = 80
 const GAP_Y = 40
 
@@ -44,8 +42,8 @@ export function layoutGraph(
       return {
         ...node,
         position: {
-          x: col * (NODE_W + GAP_X),
-          y: row * (NODE_H + GAP_Y),
+          x: col * (GRAPH_NODE_WIDTH + GAP_X),
+          y: row * (GRAPH_NODE_HEIGHT + GAP_Y),
         },
         sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
         targetPosition: isHorizontal ? Position.Left : Position.Top,
@@ -72,8 +70,7 @@ function layoutWithDagre(
   })
 
   for (const node of nodes) {
-    const dim = graphNodeDimensions[node.type as GraphNodeKind]
-    graph.setNode(node.id, dim)
+    graph.setNode(node.id, { width: GRAPH_NODE_WIDTH, height: GRAPH_NODE_HEIGHT })
   }
 
   for (const edge of edges) {
@@ -84,13 +81,12 @@ function layoutWithDagre(
 
   return {
     nodes: nodes.map((node) => {
-      const dim = graphNodeDimensions[node.type as GraphNodeKind]
       const pos = graph.node(node.id)
       return {
         ...node,
         position: {
-          x: pos.x - dim.width / 2,
-          y: pos.y - dim.height / 2,
+          x: pos.x - GRAPH_NODE_WIDTH / 2,
+          y: pos.y - GRAPH_NODE_HEIGHT / 2,
         },
         sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
         targetPosition: isHorizontal ? Position.Left : Position.Top,

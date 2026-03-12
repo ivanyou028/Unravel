@@ -4,12 +4,9 @@
 
 // --- Graph data types ---
 
-export type GraphNodeKind = 'idea' | 'category' | 'insight'
-export type GraphEdgeKind = 'association' | 'hierarchy' | 'reference'
-
 export interface GraphNodeRecord {
   id: string
-  kind: GraphNodeKind
+  kind: string
   label: string // 1-140 chars
   summary?: string // max 280 chars
   emphasis?: 1 | 2 | 3 | 4 | 5
@@ -19,7 +16,7 @@ export interface GraphEdgeRecord {
   id: string
   source: string
   target: string
-  kind: GraphEdgeKind
+  kind: string
   label?: string // max 120 chars
 }
 

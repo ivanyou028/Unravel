@@ -70,7 +70,7 @@ Browser                         Server
 |------|---------|
 | `features/workspace/components/workspace-shell.tsx` | Top-level shell, mic button, voice session lifecycle |
 | `features/graph/components/graph-canvas.tsx` | React Flow canvas |
-| `features/graph/components/{idea,category,insight}-node.tsx` | Custom node renderers by kind |
+| `features/graph/components/graph-node-card.tsx` | Generic node renderer |
 | `features/graph/store/graph-store.ts` | Zustand store for graph state + event application |
 | `features/graph/lib/layout-graph.ts` | Dagre auto-layout |
 | `features/graph/contracts/inbound-graph-events.ts` | Zod schemas for validating inbound events |
@@ -90,8 +90,7 @@ Each event includes an envelope:
 { version: 1, eventId: string, occurredAt: string }
 ```
 
-**Node kinds:** `idea`, `category`, `insight`
-**Edge kinds:** `association`, `hierarchy`, `reference`
+Node and edge `kind` fields are free-form strings — Claude chooses whatever labels fit the brainstorm context (e.g. `"idea"`, `"question"`, `"action"`, `"theme"`, `"builds-on"`, etc).
 
 ## Stack
 

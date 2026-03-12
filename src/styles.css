@@ -55,11 +55,7 @@
   --secondary: rgba(35, 29, 25, 0.05);
   --muted: rgba(255, 255, 255, 0.35);
   --danger: #b24a3f;
-  --idea: #6f665e;
-  --category: #57504a;
-  --insight: #2f2925;
   --edge: rgba(57, 49, 44, 0.42);
-  --edge-strong: rgba(57, 49, 44, 0.62);
   --shadow-panel:
     0 24px 48px rgba(70, 56, 45, 0.08), 0 2px 0 rgba(255, 255, 255, 0.8) inset,
     0 -1px 0 rgba(92, 79, 66, 0.06) inset;

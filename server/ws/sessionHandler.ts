@@ -53,7 +53,7 @@ export function handleSessionSocket(
                     type: 'graph.node.upsert',
                     node: {
                       id: 'n-topic',
-                      kind: 'idea',
+                      kind: 'topic',
                       label: combinedTranscript.slice(-140),
                       emphasis: 5
                     },

@@ -1,22 +1,16 @@
 import { z } from 'zod'
 
 import {
-  graphEdgeKinds,
   graphLayoutDirections,
-  graphNodeKinds,
-  type GraphEdgeRecord,
   type GraphLayoutDirection,
-  type GraphNodeRecord,
 } from '#/features/graph/types/graph'
 
-const nodeKindSchema = z.enum(graphNodeKinds)
-const edgeKindSchema = z.enum(graphEdgeKinds)
 const layoutDirectionSchema = z.enum(graphLayoutDirections)
 
 const graphNodeRecordSchema = z
   .object({
     id: z.string().min(1),
-    kind: nodeKindSchema,
+    kind: z.string().min(1),
     label: z.string().min(1).max(140),
     summary: z.string().max(280).optional(),
     emphasis: z
@@ -36,7 +30,7 @@ const graphEdgeRecordSchema = z
     id: z.string().min(1),
     source: z.string().min(1),
     target: z.string().min(1),
-    kind: edgeKindSchema,
+    kind: z.string().min(1),
     label: z.string().max(120).optional(),
   })
   .strict()

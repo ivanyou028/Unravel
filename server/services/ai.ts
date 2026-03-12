@@ -4,13 +4,8 @@ import type {
   ConversationMessage,
   GraphNodeRecord,
   GraphEdgeRecord,
-  GraphNodeKind,
-  GraphEdgeKind,
   InboundGraphEvent,
 } from './shared-types.js'
-
-const NODE_KINDS = new Set<string>(['idea', 'category', 'insight'])
-const EDGE_KINDS = new Set<string>(['association', 'hierarchy', 'reference'])
 
 export interface AiProcessingInput {
   transcript: string
@@ -93,12 +88,13 @@ EDGES:
 ${edgesJson}
 
 ## Consolidation Rules
-- identify duplicate or nearly identical "idea" or "category" nodes based on the true context from the transcript.
+- Identify duplicate or nearly identical nodes based on the true context from the transcript.
 - If two nodes convey the exact same thought in the transcript, REMOVE one and keep the other.
-- If multiple nodes share a unifying foundational core based on the transcript, create a parent "category" node and link them via "hierarchy" edges.
-- VERY STRICT: Do not create edges connecting nodes simply because they kind of relate to each other. Edges ("association", "reference") should ONLY be created if there is an explicit and structural relationship. Otherwise, leave nodes disconnected.
+- If multiple nodes share a unifying foundational core based on the transcript, create a parent node and link children to it.
+- VERY STRICT: Do not create edges connecting nodes simply because they kind of relate to each other. Edges should ONLY be created if there is an explicit and structural relationship. Otherwise, leave nodes disconnected.
 - DO NOT remove nodes just because they are detailed. Only remove actual redundancies.
 - If the graph is already perfectly clean, return an empty "graphEvents" array.
+- Use descriptive kind labels for any new nodes or edges (e.g. "theme", "question", "action", "link", etc).
 
 ## Response Format
 Respond with ONLY a JSON object. No markdown, no code fences, no explanation outside the JSON.
@@ -182,10 +178,9 @@ ${edgesJson}
 
 ## Graph Mutation Rules
 Analyze the user's speech and produce graph mutations:
-- Create a new node for new ideas, topics, or themes in the brainstorm
-- VERY STRICT: Only create "association" edges between related ideas if there is an explicit, profound, and direct overlap.
-- VERY STRICT: Only create "reference" edges for cross-references between clusters if they fundamentally rely on each other.
-- Do NOT draw edges loosely just because two nodes exist in the same conceptual space. Spare the edges.
+- Create a new node for each distinct idea, topic, question, action item, or theme
+- Use a descriptive "kind" label for each node and edge (e.g. "idea", "topic", "question", "action", "theme", "concern", "example", "link", etc) — choose whatever fits best
+- VERY STRICT: Only create edges between nodes if there is an explicit, profound, and direct relationship. Do NOT draw edges loosely just because two nodes exist in the same conceptual space. Spare the edges.
 - ALWAYS reference existing node IDs when creating edges to existing nodes
 - Generate UUIDs for new node and edge IDs (format: "n-<short-id>" for nodes, "e-<short-id>" for edges)
 - Labels: max 140 chars for nodes
@@ -204,7 +199,7 @@ Respond with ONLY a JSON object. No markdown, no code fences, no explanation out
     },
     {
       "type": "graph.edge.upsert",
-      "edge": { "id": "e-def456", "source": "n-abc123", "target": "n-existing", "kind": "association", "label": "optional edge label" }
+      "edge": { "id": "e-def456", "source": "n-abc123", "target": "n-existing", "kind": "builds-on", "label": "optional edge label" }
     }
   ]
 }
@@ -230,11 +225,11 @@ The "graphEvents" array may be empty [] if no graph changes are warranted.`
     const { id, kind, label, summary, emphasis } = raw
     if (typeof id !== 'string' || !id) return null
     if (typeof label !== 'string' || !label) return null
-    if (!NODE_KINDS.has(kind as string)) return null
+    if (typeof kind !== 'string' || !kind) return null
 
     const node: GraphNodeRecord = {
       id,
-      kind: kind as GraphNodeKind,
+      kind,
       label: label.slice(0, 140),
     }
     if (typeof summary === 'string' && summary) node.summary = summary.slice(0, 280)
@@ -249,13 +244,13 @@ The "graphEvents" array may be empty [] if no graph changes are warranted.`
     if (typeof id !== 'string' || !id) return null
     if (typeof source !== 'string' || !source) return null
     if (typeof target !== 'string' || !target) return null
-    if (!EDGE_KINDS.has(kind as string)) return null
+    if (typeof kind !== 'string' || !kind) return null
 
     const edge: GraphEdgeRecord = {
       id,
       source,
       target,
-      kind: kind as GraphEdgeKind,
+      kind,
     }
     if (typeof label === 'string' && label) edge.label = label.slice(0, 120)
     return edge

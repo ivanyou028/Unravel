@@ -1,11 +1,4 @@
-import type { CSSProperties } from 'react'
 import { Position, type Edge, type Node, type XYPosition } from '@xyflow/react'
-
-export const graphNodeKinds = ['idea', 'category', 'insight'] as const
-export type GraphNodeKind = (typeof graphNodeKinds)[number]
-
-export const graphEdgeKinds = ['association', 'hierarchy', 'reference'] as const
-export type GraphEdgeKind = (typeof graphEdgeKinds)[number]
 
 export const graphLayoutDirections = ['TB', 'LR'] as const
 export type GraphLayoutDirection = (typeof graphLayoutDirections)[number]
@@ -16,67 +9,32 @@ export type GraphConnectionStatus =
   | 'connected'
   | 'error'
 
-interface GraphNodeRecordBase {
+export interface GraphNodeRecord {
   id: string
+  kind: string
   label: string
   summary?: string
   emphasis?: 1 | 2 | 3 | 4 | 5
   [key: string]: unknown
 }
 
-export interface IdeaNodeRecord extends GraphNodeRecordBase {
-  kind: 'idea'
-}
-
-export interface CategoryNodeRecord extends GraphNodeRecordBase {
-  kind: 'category'
-}
-
-export interface InsightNodeRecord extends GraphNodeRecordBase {
-  kind: 'insight'
-}
-
-export type GraphNodeRecord =
-  | IdeaNodeRecord
-  | CategoryNodeRecord
-  | InsightNodeRecord
-
-export type GraphNodeData = GraphNodeRecord
-
 export interface GraphEdgeRecord {
   id: string
   source: string
   target: string
-  kind: GraphEdgeKind
+  kind: string
   label?: string
   [key: string]: unknown
 }
 
+export type GraphNodeData = GraphNodeRecord
 export type GraphEdgeData = Omit<GraphEdgeRecord, 'id' | 'source' | 'target'>
 
-export type GraphNode = Node<GraphNodeData, GraphNodeKind>
+export type GraphNode = Node<GraphNodeData, 'default'>
 export type GraphEdge = Edge<GraphEdgeData, 'default'>
 
-const nodeAccentMap: Record<GraphNodeKind, string> = {
-  idea: 'var(--idea)',
-  category: 'var(--category)',
-  insight: 'var(--insight)',
-}
-
-const edgeAccentMap: Record<GraphEdgeKind, string> = {
-  association: 'var(--edge)',
-  hierarchy: 'var(--edge)',
-  reference: 'var(--edge-strong)',
-}
-
-export const graphNodeDimensions: Record<
-  GraphNodeKind,
-  { width: number; height: number }
-> = {
-  idea: { width: 280, height: 120 },
-  category: { width: 280, height: 120 },
-  insight: { width: 280, height: 120 },
-}
+export const GRAPH_NODE_WIDTH = 280
+export const GRAPH_NODE_HEIGHT = 120
 
 export function createGraphNode(
   record: GraphNodeRecord,
@@ -84,7 +42,7 @@ export function createGraphNode(
 ): GraphNode {
   return {
     id: record.id,
-    type: record.kind,
+    type: 'default',
     position,
     sourcePosition: Position.Bottom,
     targetPosition: Position.Top,
@@ -92,9 +50,6 @@ export function createGraphNode(
     connectable: false,
     selectable: true,
     data: record,
-    style: {
-      '--node-accent': nodeAccentMap[record.kind],
-    } as CSSProperties,
   }
 }
 
@@ -104,10 +59,9 @@ export function createGraphEdge(record: GraphEdgeRecord): GraphEdge {
     type: 'default',
     source: record.source,
     target: record.target,
-    animated: record.kind === 'reference',
     style: {
-      stroke: edgeAccentMap[record.kind],
-      strokeWidth: record.kind === 'hierarchy' ? 1.7 : 1.4,
+      stroke: 'var(--edge)',
+      strokeWidth: 1.4,
     },
     data: {
       kind: record.kind,

@@ -124,12 +124,7 @@ export const useGraphStore = create<GraphStore>((set) => ({
       )
         ? state.nodes.map((existingNode) =>
           existingNode.id === node.id
-            ? {
-              ...existingNode,
-              data: node,
-              type: node.kind,
-              style: createGraphNode(node).style,
-            }
+            ? { ...existingNode, data: node }
             : existingNode,
         )
         : [...state.nodes, createGraphNode(node, options?.positionHint)]
@@ -209,7 +204,7 @@ export const useGraphStore = create<GraphStore>((set) => ({
             id: edge.id,
             source: edge.source,
             target: edge.target,
-            kind: updates.kind ?? (edge.data?.kind as any) ?? 'association',
+            kind: updates.kind ?? (edge.data?.kind as any) ?? 'related',
             label:
               updates.label !== undefined ? updates.label : (edge.data?.label as any),
           })
@@ -278,12 +273,7 @@ export const useGraphStore = create<GraphStore>((set) => ({
           )
             ? state.nodes.map((node) =>
               node.id === event.node.id
-                ? {
-                  ...node,
-                  data: event.node,
-                  type: event.node.kind,
-                  style: createGraphNode(event.node).style,
-                }
+                ? { ...node, data: event.node }
                 : node,
             )
             : [...state.nodes, createGraphNode(event.node, positionHint)]
