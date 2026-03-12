@@ -42,7 +42,7 @@ export class AiService {
     const messages = this.buildMessages(input)
 
     const response = await this.getClient().messages.create({
-      model: process.env.LLM_MODEL || 'claude-haiku-4-5',
+      model: process.env.LLM_MODEL_EXTRACTION || 'claude-haiku-4-5',
       max_tokens: 4096,
       system: systemPrompt,
       messages,
@@ -113,7 +113,7 @@ Respond with ONLY a JSON object. No markdown, no code fences, no explanation out
 }`
 
     const response = await this.getClient().messages.create({
-      model: 'claude-sonnet-4-6',
+      model: process.env.LLM_MODEL_CONSOLIDATION || 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: systemPrompt,
       messages: [
