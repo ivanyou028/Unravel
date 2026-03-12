@@ -1,196 +1,112 @@
 # Unravel
 
-Frontend-only TanStack Start scaffold for a voice-native ideation tool. The UI is built to receive real-time graph deltas from an external voice pipeline and render them on a styled React Flow canvas with typed state, layout orchestration, and a clear integration boundary.
+A voice-native ideation tool. Speak your thoughts out loud and watch them materialize as a structured knowledge graph in real time. The system listens via Deepgram, processes your speech with Claude, and emits graph deltas that render on a React Flow canvas with auto-layout.
 
 ## Setup
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env  # then fill in your API keys
 ```
 
-The app runs on [http://localhost:3000](http://localhost:3000).
+You need two keys:
 
-## Scripts
+- `ANTHROPIC_API_KEY` — for Claude (graph generation + consolidation)
+- `DEEPGRAM_API_KEY` — for real-time speech-to-text
+
+## Running
+
+Start both servers:
 
 ```bash
-npm run dev
-npm run build
-npm run preview
-npm run test
-npm run lint
-npm run format
-npm run check
+npm run dev          # Vite frontend on :3000
+npm run dev:server   # Express + WebSocket backend on :3001
 ```
 
-## Stack
+Open [http://localhost:3000](http://localhost:3000) and click "start yapping."
 
-- TanStack Start + React + TypeScript
-- Tailwind CSS v4 + `@tailwindcss/vite`
-- shadcn-style component setup via [`components.json`](./components.json)
-- `@xyflow/react` for the graph canvas
-- `@dagrejs/dagre` for auto-layout
-- `zustand` for client graph state
-- `zod` for inbound event validation
-- `motion` for shell transitions
+## How It Works
 
-## What Is Scaffolded
-
-- Distinctive responsive app shell with:
-  - top bar status + layout controls
-  - main graph canvas region
-  - right-side live transcript/activity panel empty state
-- Typed graph foundation:
-  - node kinds: `idea`, `category`, `insight`
-  - typed edge model
-  - Zustand graph store
-  - Dagre layout integration
-  - custom React Flow node components
-- Realtime boundary:
-  - strict Zod contracts for inbound graph delta events
-  - adapter interface definitions only
-  - separation between adapter, store, and UI layers
-- Design system:
-  - CSS design tokens
-  - custom typography
-  - focus-visible treatment
-  - motion polish
-  - shadcn-compatible utility primitives in `src/components/ui`
-
-## Intentionally Out Of Scope
-
-- Backend services
-- API routes
-- auth
-- database work
-- middleware
-- websocket / SSE / WebRTC transport implementation
-- voice agent, speech-to-text, or orchestration logic
-- mocked graph data, fake streams, timers, or demo event playback
+1. You press the mic button and start talking.
+2. Browser captures audio, downsamples to 16kHz PCM, and streams it over a WebSocket.
+3. The server pipes audio to Deepgram for real-time transcription.
+4. Transcripts accumulate and are periodically sent to Claude, which decides what graph operations to emit (add/update/remove nodes and edges).
+5. A separate consolidation pass runs every 5s to merge duplicates and clean up the graph.
+6. Graph events stream back to the client over the same WebSocket.
+7. The Zustand store applies events, Dagre computes layout, and React Flow renders the result.
 
 ## Architecture
 
-### UI Layer
-
-- [`src/features/workspace/components/workspace-shell.tsx`](./src/features/workspace/components/workspace-shell.tsx): top-level workspace composition
-- [`src/features/workspace/components/top-bar.tsx`](./src/features/workspace/components/top-bar.tsx): status chips and layout controls
-- [`src/features/graph/components/graph-canvas.tsx`](./src/features/graph/components/graph-canvas.tsx): React Flow wiring and canvas empty state
-- [`src/features/activity/components/activity-panel.tsx`](./src/features/activity/components/activity-panel.tsx): transcript/activity empty state
-
-### Graph Domain Layer
-
-- [`src/features/graph/types/graph.ts`](./src/features/graph/types/graph.ts): typed nodes, edges, layout directions, and React Flow builders
-- [`src/features/graph/lib/layout-graph.ts`](./src/features/graph/lib/layout-graph.ts): Dagre layout utility
-- [`src/features/graph/store/graph-store.ts`](./src/features/graph/store/graph-store.ts): Zustand state and graph actions
-
-### Realtime Boundary
-
-- [`src/features/graph/contracts/inbound-graph-events.ts`](./src/features/graph/contracts/inbound-graph-events.ts): strict inbound event schemas and TS types
-- [`src/features/realtime/graph-event-adapter.ts`](./src/features/realtime/graph-event-adapter.ts): adapter interface signatures only
-
-## Folder Tree
-
-```text
-src/
-├── components/
-│   └── ui/
-│       ├── button.tsx
-│       ├── scroll-area.tsx
-│       └── separator.tsx
-├── features/
-│   ├── activity/
-│   │   └── components/
-│   │       └── activity-panel.tsx
-│   ├── graph/
-│   │   ├── components/
-│   │   │   ├── category-node.tsx
-│   │   │   ├── graph-canvas.tsx
-│   │   │   ├── graph-node-card.tsx
-│   │   │   ├── idea-node.tsx
-│   │   │   └── insight-node.tsx
-│   │   ├── contracts/
-│   │   │   └── inbound-graph-events.ts
-│   │   ├── lib/
-│   │   │   └── layout-graph.ts
-│   │   ├── store/
-│   │   │   └── graph-store.ts
-│   │   └── types/
-│   │       └── graph.ts
-│   ├── realtime/
-│   │   └── graph-event-adapter.ts
-│   └── workspace/
-│       └── components/
-│           ├── top-bar.tsx
-│           └── workspace-shell.tsx
-├── lib/
-│   └── utils.ts
-├── routes/
-│   ├── __root.tsx
-│   └── index.tsx
-└── styles.css
+```
+Browser                         Server
+  |                               |
+  |-- audio (binary ws) --------->|-- Deepgram (STT)
+  |                               |     |
+  |<-- transcript (json ws) ------|<----|
+  |                               |
+  |                               |-- Claude (graph generation)
+  |                               |     |
+  |<-- graph events (json ws) ---|<----|
+  |                               |
+  |                               |-- Claude (graph consolidation, periodic)
+  |                               |     |
+  |<-- graph events (json ws) ---|<----|
 ```
 
-## Realtime Event Contract
+### Server (`server/`)
 
-Inbound events are validated with Zod before they should touch the store. Supported event types:
+| File | Purpose |
+|------|---------|
+| `index.ts` | Express app, REST endpoints, WebSocket server |
+| `ws/sessionHandler.ts` | Per-session pipeline: Deepgram + Claude + graph state |
+| `services/deepgram.ts` | Deepgram streaming STT client |
+| `services/ai.ts` | Claude integration for graph generation and consolidation |
+| `services/session.ts` | Session state manager (graph + conversation history) |
+| `services/shared-types.ts` | Shared type definitions for the event protocol |
 
-- `graph.node.upsert`
-- `graph.node.remove`
-- `graph.edge.upsert`
-- `graph.edge.remove`
-- `graph.layout`
-- `graph.reset`
+### Client (`src/`)
 
-Each event uses a strict envelope:
+| File | Purpose |
+|------|---------|
+| `features/workspace/components/workspace-shell.tsx` | Top-level shell, mic button, voice session lifecycle |
+| `features/graph/components/graph-canvas.tsx` | React Flow canvas |
+| `features/graph/components/{idea,category,insight}-node.tsx` | Custom node renderers by kind |
+| `features/graph/store/graph-store.ts` | Zustand store for graph state + event application |
+| `features/graph/lib/layout-graph.ts` | Dagre auto-layout |
+| `features/graph/contracts/inbound-graph-events.ts` | Zod schemas for validating inbound events |
+| `features/realtime/ws-session-adapter.ts` | WebSocket adapter (implements `GraphEventAdapter`) |
+| `features/realtime/graph-event-adapter.ts` | Adapter interface |
+| `voice/client/useVoiceSession.ts` | React hook: session lifecycle, mic capture, audio streaming |
+
+## Graph Event Protocol
+
+Events flow server-to-client over WebSocket and are validated with Zod before reaching the store.
+
+**Event types:** `graph.node.upsert`, `graph.node.remove`, `graph.edge.upsert`, `graph.edge.remove`, `graph.layout`, `graph.reset`
+
+Each event includes an envelope:
 
 ```ts
-{
-  version: 1
-  eventId: string
-  occurredAt: string // ISO datetime
-}
+{ version: 1, eventId: string, occurredAt: string }
 ```
 
-Node payloads support:
+**Node kinds:** `idea`, `category`, `insight`
+**Edge kinds:** `association`, `hierarchy`, `reference`
 
-- `id`
-- `kind`: `idea | category | insight`
-- `label`
-- optional `summary`
-- optional `emphasis`
+## Stack
 
-Edge payloads support:
+- **Frontend:** React, TanStack Start, Tailwind CSS v4, Motion
+- **Graph:** @xyflow/react, @dagrejs/dagre, Zustand, Zod
+- **Backend:** Express, WebSocket (ws)
+- **AI:** Anthropic Claude SDK
+- **STT:** Deepgram streaming API
 
-- `id`
-- `source`
-- `target`
-- `kind`: `association | hierarchy | reference`
-- optional `label`
+## Scripts
 
-## Adapter Boundary
-
-The transport is intentionally not implemented. External integrations should conform to [`src/features/realtime/graph-event-adapter.ts`](./src/features/realtime/graph-event-adapter.ts):
-
-```ts
-interface GraphEventAdapter {
-  readonly name: string
-  connect(): Promise<void> | void
-  disconnect(): Promise<void> | void
-  subscribe(listener: GraphEventListener): () => void
-}
-```
-
-Expected flow:
-
-1. External voice pipeline emits graph delta events.
-2. Adapter validates/parses them with the Zod contracts.
-3. Adapter forwards typed events into the Zustand store.
-4. Store mutates graph state and triggers Dagre layout when needed.
-5. React Flow re-renders the canvas with the updated nodes and edges.
-
-## Notes
-
-- The graph starts empty by design.
-- The activity panel is an empty state by design.
-- No transport, no demo data, and no fake event source are included.
-- `npm run build` succeeds against the current scaffold.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run dev:server` | Start backend server |
+| `npm run build` | Production build |
+| `npm run lint` | Run ESLint |
+| `npm run check` | Format + lint fix |
