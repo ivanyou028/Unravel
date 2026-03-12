@@ -24,6 +24,7 @@ import {
 export interface GraphStoreState {
   nodes: GraphNode[]
   edges: GraphEdge[]
+  selectedNodeIds: string[]
   layoutDirection: GraphLayoutDirection
   autoLayout: boolean
   connectionStatus: GraphConnectionStatus
@@ -32,6 +33,7 @@ export interface GraphStoreState {
 }
 
 export interface GraphStoreActions {
+  setSelectedNodeIds: (ids: string[]) => void
   setConnectionStatus: (status: GraphConnectionStatus) => void
   replaceGraph: (
     nodes: GraphNodeRecord[],
@@ -67,6 +69,7 @@ export type GraphStore = GraphStoreState & GraphStoreActions
 const initialState: GraphStoreState = {
   nodes: [],
   edges: [],
+  selectedNodeIds: [],
   layoutDirection: 'TB',
   autoLayout: true,
   connectionStatus: 'unbound',
@@ -99,6 +102,9 @@ function maybeLayout(
 
 export const useGraphStore = create<GraphStore>((set) => ({
   ...initialState,
+  setSelectedNodeIds: (ids) => {
+    set({ selectedNodeIds: ids })
+  },
   setConnectionStatus: (status) => {
     set({ connectionStatus: status })
   },

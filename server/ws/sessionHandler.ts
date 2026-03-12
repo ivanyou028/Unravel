@@ -20,6 +20,9 @@ export function handleSessionSocket(
   let pendingTranscripts: string[] = []
   let isProcessing = false
 
+  // --- Selection context from client ---
+  let selectedNodeIds: string[] = []
+
   // --- Send JSON message to client ---
   function sendToClient(message: ServerToClientMessage): void {
     if (!destroyed && ws.readyState === ws.OPEN) {
@@ -177,6 +180,7 @@ export function handleSessionSocket(
         conversationHistory: session.conversationHistory,
         currentGraph: graphSnapshot,
         topic: session.topic,
+        selectedNodeIds,
       })
 
       if (destroyed) return
@@ -226,6 +230,15 @@ export function handleSessionSocket(
       if (audioChunks === 1) console.log(`[ws] Receiving audio (first chunk: ${(data as Buffer).length} bytes)`)
       if (audioChunks % 50 === 0) console.log(`[ws] Audio chunks received: ${audioChunks}`)
       deepgram.sendAudio(data as Buffer)
+    } else if (!isBinary && !destroyed) {
+      try {
+        const msg = JSON.parse(data.toString())
+        if (msg.type === 'selection.update' && Array.isArray(msg.selectedNodeIds)) {
+          selectedNodeIds = msg.selectedNodeIds
+        }
+      } catch {
+        // Ignore malformed JSON
+      }
     }
   })
 

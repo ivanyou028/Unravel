@@ -208,6 +208,9 @@ pre code {
 .react-flow {
   --xy-node-border-default: transparent;
   --xy-node-background-color-default: transparent;
+  --xy-node-boxshadow-hover-default: none;
+  --xy-node-boxshadow-selected-default: none;
+  --xy-node-border-radius-default: 0;
   --xy-edge-stroke-default: var(--edge);
   --xy-edge-stroke-width-default: 1.35;
   --xy-attribution-background-color-default: transparent;
@@ -215,15 +218,21 @@ pre code {
 }
 
 .react-flow__node {
-  background: transparent;
-  border: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0;
+  width: auto !important;
 }
 
-.react-flow__handle {
-  width: 0.55rem;
-  height: 0.55rem;
-  border: 1px solid color-mix(in oklab, var(--paper) 80%, var(--ink) 20%);
-  background: var(--paper-strong);
+.node-selected {
+  animation: node-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes node-breathe {
+  0%, 100% { --tw-ring-opacity: 0.5; }
+  50% { --tw-ring-opacity: 0.25; }
 }
 
 .react-flow__edge-path {

@@ -59,6 +59,14 @@ export function WorkspaceShell() {
     }
   }, [status, getAdapter, applyEvent])
 
+  // Forward node selection changes to the server
+  const selectedNodeIds = useGraphStore((state) => state.selectedNodeIds)
+  useEffect(() => {
+    const adapter = getAdapter()
+    if (!adapter || status !== 'connected') return
+    adapter.sendJson({ type: 'selection.update', selectedNodeIds })
+  }, [selectedNodeIds, status, getAdapter])
+
   const handleButtonClick = useCallback(async () => {
     if (ctaState === 'centered-idle') {
       // Start session

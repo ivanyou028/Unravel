@@ -15,6 +15,7 @@ export interface AiProcessingInput {
     edges: GraphEdgeRecord[]
   }
   topic?: string
+  selectedNodeIds?: string[]
 }
 
 export interface AiProcessingResult {
@@ -165,6 +166,37 @@ Respond with ONLY a JSON object. No markdown, no code fences, no explanation out
       densityRule = '- The graph is getting very dense. Be EXTREMELY conservative about creating new nodes. ONLY create a new node if a completely novel, fundamental paradigm is introduced. Prefer to link to or update existing nodes.'
     }
 
+    // Build selection context section
+    let selectionSection = ''
+    const selected = input.selectedNodeIds ?? []
+    if (selected.length > 0) {
+      const selectedDetails = selected
+        .map((id) => {
+          const node = input.currentGraph.nodes.find((n) => n.id === id)
+          return node ? `  - ${node.id}: "${node.label}"${node.summary ? ` (${node.summary})` : ''}` : `  - ${id}: (unknown node)`
+        })
+        .join('\n')
+
+      selectionSection = `
+## User's Current Selection
+The user has selected these nodes on the graph:
+${selectedDetails}
+
+When the user says "this", "these", "it", or uses demonstrative language, they are referring to the selected node(s) above.
+
+## Voice Command Patterns
+The user interacts via voice while selecting nodes. Interpret these patterns:
+- "Expand on this" / "Tell me more about this" → Generate 2-4 sub-nodes branching from the selected node, connected with edges
+- "Why are these connected?" → If 2+ nodes selected, explain the relationship by adding/updating edge labels between them
+- "This is wrong" / "Actually what I mean is..." → Update the selected node's label and/or summary in-place (upsert with the SAME node ID)
+- "Merge these" / "Combine these" → Remove the selected nodes, create one new node capturing their combined meaning, re-link any existing edges
+- "Challenge this" / "What's wrong with this?" → Generate 1-2 counter-argument nodes connected to the selected node with kind "counter-argument"
+- "Summarize this cluster" / "What's the theme?" → Create a parent node summarizing the selected nodes, connect them as children
+
+IMPORTANT: When the user references selected nodes, use the EXISTING node IDs for updates/removals — do not create duplicates.
+`
+    }
+
     return `You are a data extraction system. Your job is to listen to a raw, messy, stream-of-consciousness transcript from a user and extract key concepts to build a structured knowledge graph.
 
 ${topicLine}
@@ -175,7 +207,7 @@ ${nodesJson}
 
 EDGES:
 ${edgesJson}
-
+${selectionSection}
 ## Graph Mutation Rules
 Analyze the user's speech and produce graph mutations:
 - Create a new node for each distinct idea, topic, question, action item, or theme

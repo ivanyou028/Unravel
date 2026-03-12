@@ -94,6 +94,12 @@ export class WsSessionAdapter implements GraphEventAdapter {
     }
   }
 
+  sendJson(msg: Record<string, unknown>): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(msg))
+    }
+  }
+
   private emit(event: InboundGraphEvent): void {
     for (const listener of this.listeners) {
       listener(event)
