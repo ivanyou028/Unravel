@@ -100,6 +100,4 @@ export const inboundGraphEventSchema = z.discriminatedUnion('type', [
 ])
 
 export type InboundGraphEvent = z.infer<typeof inboundGraphEventSchema>
-export type InboundNodeRecord = GraphNodeRecord
-export type InboundEdgeRecord = GraphEdgeRecord
 export type InboundLayoutDirection = GraphLayoutDirection

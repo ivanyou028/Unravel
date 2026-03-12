@@ -85,10 +85,6 @@ export class SessionManager {
         case 'graph.edge.remove':
           session.graphEdges.delete(event.edgeId)
           break
-        case 'graph.reset':
-          session.graphNodes.clear()
-          session.graphEdges.clear()
-          break
       }
     }
   }

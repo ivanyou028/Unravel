@@ -33,7 +33,6 @@ function float32ToInt16(float32: Float32Array): ArrayBuffer {
 
 export function useVoiceSession(callbacks?: VoiceSessionCallbacks) {
   const [status, setStatus] = useState<VoiceSessionStatus>('idle')
-  const [isMuted, setIsMuted] = useState(false)
   const sessionIdRef = useRef<string | null>(null)
   const adapterRef = useRef<WsSessionAdapter | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -181,29 +180,16 @@ export function useVoiceSession(callbacks?: VoiceSessionCallbacks) {
       sessionIdRef.current = null
     }
 
-    setIsMuted(false)
     updateStatus('disconnected')
   }, [updateStatus])
-
-  const toggleMute = useCallback(() => {
-    if (streamRef.current) {
-      const newMuted = !isMuted
-      streamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = !newMuted
-      })
-      setIsMuted(newMuted)
-    }
-  }, [isMuted])
 
   /** Expose the adapter so parent components can subscribe to graph events */
   const getAdapter = useCallback(() => adapterRef.current, [])
 
   return {
     status,
-    isMuted,
     connect,
     disconnect,
-    toggleMute,
     getAdapter,
   }
 }

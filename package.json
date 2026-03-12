@@ -13,8 +13,7 @@
     "lint": "eslint",
     "format": "prettier --check .",
     "check": "prettier --write . && eslint --fix",
-    "test:voice": "node test/server.js",
-    "dev:server": "tsx watch server/index.ts"
+"dev:server": "tsx watch server/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -30,9 +29,7 @@
     "@tanstack/react-start": "latest",
     "@tanstack/router-plugin": "^1.132.0",
     "@xyflow/react": "^12.10.1",
-    "agora-rtc-sdk-ng": "^4.23.2",
-    "agora-token": "^2.0.5",
-    "class-variance-authority": "^0.7.1",
+"class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",

@@ -58,22 +58,11 @@ export interface GraphEdgeRemoveEvent extends EventEnvelope {
   relayout?: boolean
 }
 
-export interface GraphLayoutEvent extends EventEnvelope {
-  type: 'graph.layout'
-  direction?: 'TB' | 'LR'
-}
-
-export interface GraphResetEvent extends EventEnvelope {
-  type: 'graph.reset'
-}
-
 export type InboundGraphEvent =
   | GraphNodeUpsertEvent
   | GraphNodeRemoveEvent
   | GraphEdgeUpsertEvent
   | GraphEdgeRemoveEvent
-  | GraphLayoutEvent
-  | GraphResetEvent
 
 // --- WebSocket messages (server → client) ---
 
