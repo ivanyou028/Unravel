@@ -51,7 +51,7 @@ export function handleSessionSocket(
               const snapshot = sessionManager.getGraphSnapshot(sessionId)
               if (snapshot.nodes.length === 0 || (snapshot.nodes.length === 1 && snapshot.nodes[0].id === 'n-topic')) {
                 const combinedTranscript = pendingTranscripts.join(' ')
-                if (combinedTranscript.trim().length > 3) {
+                if (combinedTranscript.trim().length > 15) {
                   const payload: InboundGraphEvent = {
                     type: 'graph.node.upsert',
                     node: {
@@ -66,13 +66,10 @@ export function handleSessionSocket(
                     occurredAt: new Date().toISOString()
                   }
                   sendToClient(payload)
+                  sessionManager.applyGraphEvents(sessionId, [payload])
                 }
               }
 
-              // Fire full AI processing on non-final chunks in the first 5s too
-              if (!event.is_final) {
-                processAccumulatedTranscripts();
-              }
             }
           }
         }
@@ -97,7 +94,7 @@ export function handleSessionSocket(
 
   // --- AI Processing Timer ---
   const sessionStartTime = Date.now()
-  let currentTimerInterval = 1000
+  let currentTimerInterval = 3000
   let aiTimer: NodeJS.Timeout | null = null
 
   function setupAiTimer() {
@@ -105,7 +102,7 @@ export function handleSessionSocket(
     const elapsedSeconds = (Date.now() - sessionStartTime) / 1000
 
     // Switch to 5s interval after 10s
-    if (elapsedSeconds >= 10 && currentTimerInterval === 1000) {
+    if (elapsedSeconds >= 10 && currentTimerInterval !== 5000) {
       if (aiTimer) clearInterval(aiTimer)
       currentTimerInterval = 5000
       aiTimer = setInterval(timerTick, currentTimerInterval)
@@ -163,10 +160,15 @@ export function handleSessionSocket(
   // --- AI processing pipeline ---
   async function processAccumulatedTranscripts(): Promise<void> {
     if (destroyed || pendingTranscripts.length === 0 || isProcessing) return
-    isProcessing = true
 
     const transcript = pendingTranscripts.join(' ')
+
+    // Minimum length threshold: don't process very short fragments.
+    // They'll accumulate and be picked up on the next timer tick.
+    if (transcript.trim().length < 20) return
+
     pendingTranscripts = []
+    isProcessing = true
 
     try {
       sessionManager.addUserMessage(sessionId, transcript)

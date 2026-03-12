@@ -159,11 +159,11 @@ Respond with ONLY a JSON object. No markdown, no code fences, no explanation out
     const nodeCount = input.currentGraph.nodes.length
     let densityRule = ''
     if (nodeCount < 5) {
-      densityRule = '- The graph is currently empty or very sparse. Please extract and create nodes liberally for any distinct ideas or concepts mentioned to help seed the brainstorm.'
+      densityRule = '- The graph is sparse. Create nodes for clear, substantive concepts. Do not create nodes just to fill the graph — quality over quantity.'
     } else if (nodeCount < 15) {
       densityRule = '- The graph has a good foundation. Only create new nodes for ideas that do not fit into the existing nodes, otherwise update existing nodes.'
     } else {
-      densityRule = '- The graph is getting very dense. Be EXTREMELY conservative about creating new nodes. ONLY create a new node if a completely novel, fundamental paradigm is introduced. Prefer to link to or update existing nodes.'
+      densityRule = '- The graph is dense. Be EXTREMELY conservative. ONLY create a new node if a completely novel concept is introduced. Prefer updating existing nodes.'
     }
 
     // Build selection context section
@@ -197,7 +197,9 @@ IMPORTANT: When the user references selected nodes, use the EXISTING node IDs fo
 `
     }
 
-    return `You are a data extraction system. Your job is to listen to a raw, messy, stream-of-consciousness transcript from a user and extract key concepts to build a structured knowledge graph.
+    return `You are a semantic understanding system for building a knowledge graph from live speech. You receive raw, messy, stream-of-consciousness transcript from a user who is thinking out loud.
+
+Your job is to identify the MEANINGFUL CONCEPTS the user is actually talking about — NOT to extract individual words or phrases.
 
 ${topicLine}
 
@@ -208,16 +210,33 @@ ${nodesJson}
 EDGES:
 ${edgesJson}
 ${selectionSection}
+
+## Critical Rules: What NOT to Extract
+- NEVER create nodes for filler words, hedging language, or conversational noise (e.g. "um", "like", "I wonder", "I think", "maybe", "kind of", "you know")
+- NEVER create nodes for isolated adjectives or adverbs ("good", "interesting", "really")
+- NEVER create nodes for speech disfluencies or partial words
+- NEVER create nodes for meta-commentary about the thinking process ("let me think", "what would be", "I'm trying to")
+- NEVER create nodes for vague restatements of the same thought — update the existing node instead
+- NEVER create a node unless you can articulate a specific, concrete concept it represents
+- If the transcript is too short or too vague to extract a real concept, return an EMPTY graphEvents array. This is the correct response for incomplete thoughts.
+
+## What TO Extract
+- Concrete topics, subjects, or domains the user is discussing (e.g. "startup ideas", "AI applications", "climate tech")
+- Specific ideas, proposals, or hypotheses the user articulates
+- Explicit questions the user is trying to answer
+- Named entities (people, companies, technologies, places)
+- Action items or decisions
+- Synthesize fragments into coherent concepts. If the user says "I'm trying to think of good startup ideas in 2026", the concept is "Startup ideas for 2026" — ONE node, not five.
+
 ## Graph Mutation Rules
-Analyze the user's speech and produce graph mutations:
-- Create a new node for each distinct idea, topic, question, action item, or theme
-- Use a descriptive "kind" label for each node and edge (e.g. "idea", "topic", "question", "action", "theme", "concern", "example", "link", etc) — choose whatever fits best
-- VERY STRICT: Only create edges between nodes if there is an explicit, profound, and direct relationship. Do NOT draw edges loosely just because two nodes exist in the same conceptual space. Spare the edges.
+- Create nodes ONLY for substantive concepts that a human note-taker would write down
+- Use a descriptive "kind" label for each node and edge (e.g. "idea", "topic", "question", "action", "theme", "concern", "example", "link", etc)
+- VERY STRICT: Only create edges between nodes if there is an explicit, profound, and direct relationship. Do NOT draw edges loosely.
 - ALWAYS reference existing node IDs when creating edges to existing nodes
 - Generate UUIDs for new node and edge IDs (format: "n-<short-id>" for nodes, "e-<short-id>" for edges)
 - Labels: max 140 chars for nodes
 - Summaries: max 280 chars, optional, for nodes that need elaboration
-- Do NOT create duplicate nodes for ideas already on the graph — update them instead
+- Do NOT create duplicate nodes — update existing ones instead
 ${densityRule}
 
 ## Response Format
@@ -239,7 +258,8 @@ Respond with ONLY a JSON object. No markdown, no code fences, no explanation out
 Event types you can use: graph.node.upsert, graph.node.remove, graph.edge.upsert, graph.edge.remove
 
 Do NOT include version, eventId, or occurredAt — the server adds those.
-The "graphEvents" array may be empty [] if no graph changes are warranted.`
+The "graphEvents" array may be empty [] if no graph changes are warranted.
+Prefer returning an EMPTY array over creating low-quality nodes.`
   }
 
   private buildMessages(input: AiProcessingInput): Anthropic.MessageParam[] {
